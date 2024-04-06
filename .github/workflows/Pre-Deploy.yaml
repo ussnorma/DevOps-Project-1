@@ -20,12 +20,14 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
     - name: Checkout repo.
-      uses: actions/checkout@v4
-      with:
-        ref: 'pre-production'
+      uses: actions/checkout@v3
 
     - name: Install requirements and helm dependency
       run: |
+          mv ./wordpress/values.yaml ./wordpress/values-temp.yaml
+          sed 's/^\(  hostname: \).*$/\1wordpress-pre.k8s-9.sa/' ./wordpress/values-temp.yaml > ./wordpress/values.yaml
+          cat ./wordpress/values.yaml | grep hostname
+          rm -rf ./wordpress/values-temp.yaml
           chmod +x ./pre-deploy.sh
           ./pre-deploy.sh
           cd ./wordpress
@@ -61,8 +63,8 @@ jobs:
       run: |
         helm package wordpress > temp.txt
         HVER=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
-        git clone https://github.com/ussnorma/helm.git
-        cp ./$HVER ./helm/
+        mkdir helm
+        cp ./$HVER helm/
         helm repo index --url "https://ussnorma.github.io/helm/" ./helm/
 
     - name: Push helm-releases repo
