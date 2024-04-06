@@ -21,7 +21,8 @@ jobs:
           echo "178.124.206.53 $APPHOST" >> /etc/hosts
           cat /etc/hosts
           echo $APPHOST
-          echo "curl-test=$(curl -s -w %{http_code} http://$APPHOST)" >> $env:GITHUB_OUTPUT
+          curl -s -w %{http_code} http://$APPHOST > curl.txt
+          echo "curl-test=$(cat curl.txt)" >> $env:GITHUB_OUTPUT
           chmod +x ./curl-check.sh
           ./curl-check.sh
 
