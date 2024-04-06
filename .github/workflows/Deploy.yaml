@@ -39,6 +39,7 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
     - name: Set output
+      if: steps.test-2.outputs.curl-test == 200
       id: set
       run: |
           echo "::set-output name=curl_test::200"
