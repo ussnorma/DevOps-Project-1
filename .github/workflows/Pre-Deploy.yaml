@@ -20,9 +20,7 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
     - name: Checkout repo.
-      uses: actions/checkout@v4
-      with:
-        ref: 'pre-production'
+      uses: actions/checkout@v3
 
     - name: Install requirements and helm dependency
       run: |
