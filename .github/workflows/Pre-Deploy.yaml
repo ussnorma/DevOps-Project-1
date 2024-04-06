@@ -2,8 +2,6 @@ name: Pre-Deploy
 on:
   push:
     branches: [pre-production]
-  pull_request:
-    branches: [pre-production]
 jobs:
   build:
     name: build
