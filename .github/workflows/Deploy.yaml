@@ -153,7 +153,7 @@ jobs:
           rm -rf ./argocd/apps/wordpress-app-pre.yaml
           kubectl delete ns pre-prod
           WVER=$(shyaml get-value version < ./wordpress/Chart.yaml)
-          sed 's/^\(    targetRevision: \).*$/\1'"$WVER"'/' wordpress-app.yaml | sed 's/^\(  name: \).*$/\1wordpress-main/' | sed 's/^\(    namespace: \).*$/\1prod/' > wordpress-app-main.yaml
+          sed 's/^\(    targetRevision: \).*$/\1'"$WVER"'/' wordpress-app.yaml | sed 's/^\(  name: \).*$/\1wordpress-main/' | sed 's/^\(    namespace: \).*$/\1prod/' | sed 's/^\(        value: \).*$/\1wordpress-main.k8s-9.sa/' > wordpress-app-main.yaml
           cp ./wordpress-app-main.yaml ./argocd/apps/
 
     - name: Push helm-releases repo.

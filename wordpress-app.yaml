@@ -12,8 +12,12 @@ spec:
   project: default
   source:
     chart: wordpress
+    helm:
+      parameters:
+      - name: ingress.hostname
+        value: wordpress-pre.k8s-9.sa
     repoURL: https://ussnorma.github.io/helm/
-    targetRevision: 20.1.2
+    targetRevision: 20.1.9
   syncPolicy:
     automated:
       prune: true
