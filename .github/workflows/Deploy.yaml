@@ -84,6 +84,10 @@ jobs:
     - name: Test helm lint
       id: test-3
       run: |
+          mv ./wordpress/values.yaml ./wordpress/values-temp.yaml
+          sed 's/^\(  hostname: \).*$/\1wordpress-main.k8s-9.sa/' ./wordpress/values-temp.yaml > ./wordpress/values.yaml
+          cat ./wordpress/values.yaml | grep hostname
+          rm -rf ./wordpress/values-temp.yaml
           helm lint wordpress
           echo "helm-lint=$(echo $?)" >> $env:GITHUB_OUTPUT
           helm lint wordpress > helm-lint-output.log
@@ -107,12 +111,6 @@ jobs:
 
     - name: Create helm chart for main app
       run: |
-        mv ./wordpress/values.yaml ./wordpress/values-temp.yaml
-        sed 's/^\(  hostname: \).*$/\1wordpress-main.k8s-9.sa/' ./wordpress/values-temp.yaml > ./wordpress/values.yaml
-        ls ./wordpress/
-        cat ./wordpress/values.yaml | grep hostname
-        rm -rf ./wordpress/values-temp.yaml
-        sleep 10
         helm package wordpress > temp.txt
         HVER=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
         git clone https://github.com/ussnorma/helm.git
