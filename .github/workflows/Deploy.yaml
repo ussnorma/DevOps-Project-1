@@ -15,7 +15,7 @@ jobs:
     - name: Curl test application
       id: test-2
       run: |
-          APPHOST=$(shyaml get-value ingress.hostname < ./wordpress/values.yaml)
+          APPHOST=$(shyaml get-value spec.source.helm.parameters.0.value < wordpress-app.yaml)
           echo "178.124.206.53 $APPHOST" >> /etc/hosts
           cat /etc/hosts
           echo $APPHOST
