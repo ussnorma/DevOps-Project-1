@@ -75,6 +75,10 @@ jobs:
 
     - name: Install requirements and helm dependency
       run: |
+          mv ./wordpress/values.yaml ./wordpress/values-temp.yaml
+          sed 's/^\(  hostname: \).*$/\1wordpress-main.k8s-9.sa/' ./wordpress/values-temp.yaml > ./wordpress/values.yaml
+          cat ./wordpress/values.yaml | grep hostname
+          rm -rf ./wordpress/values-temp.yaml
           chmod +x ./pre-deploy.sh
           ./pre-deploy.sh
           cd ./wordpress
@@ -84,10 +88,6 @@ jobs:
     - name: Test helm lint
       id: test-3
       run: |
-          mv ./wordpress/values.yaml ./wordpress/values-temp.yaml
-          sed 's/^\(  hostname: \).*$/\1wordpress-main.k8s-9.sa/' ./wordpress/values-temp.yaml > ./wordpress/values.yaml
-          cat ./wordpress/values.yaml | grep hostname
-          rm -rf ./wordpress/values-temp.yaml
           helm lint wordpress
           echo "helm-lint=$(echo $?)" >> $env:GITHUB_OUTPUT
           helm lint wordpress > helm-lint-output.log
