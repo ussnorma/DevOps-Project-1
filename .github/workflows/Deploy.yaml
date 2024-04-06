@@ -66,7 +66,14 @@ jobs:
         SLACK_USERNAME: rtCamp
         SLACK_TITLE: "MAIN DEPLOY: Starting Deploy to MAIN"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-
+        
+    - name: Install requirements and helm dependency
+      run: |
+          chmod +x ./pre-deploy.sh
+          ./pre-deploy.sh
+          cd ./wordpress
+          helm dependency build
+          cd ..
     - name: Test helm lint
       id: test-3
       run: |
