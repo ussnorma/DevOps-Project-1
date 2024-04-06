@@ -66,6 +66,7 @@ jobs:
         helm package wordpress > temp.txt
         HVER=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
         git clone https://github.com/ussnorma/helm.git
+        rm -rf ./helm/index.yaml
         cp ./$HVER ./helm/
         helm repo index --url "https://ussnorma.github.io/helm/" ./helm/
 

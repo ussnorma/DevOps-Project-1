@@ -112,6 +112,7 @@ jobs:
         git clone https://github.com/ussnorma/helm.git
         cp -r ./helm/* /root/Backup-Helm/
         rm -rf ./helm/wordpress*
+        rm -rf ./helm/index.yaml
         cp ./$HVERM ./helm/
         helm repo index --url "https://ussnorma.github.io/helm/" ./helm/
     
