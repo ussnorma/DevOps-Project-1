@@ -112,11 +112,11 @@ jobs:
     - name: Create helm chart for main app
       run: |
         helm package wordpress > temp.txt
-        HVER=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
+        HVERM=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
         git clone https://github.com/ussnorma/helm.git
         cp -r ./helm/* /root/Backup-Helm/
         rm -rf ./helm/wordpress*
-        cp ./$HVER ./helm/
+        cp ./$HVERM ./helm/
         helm repo index --url "https://ussnorma.github.io/helm/" ./helm/
     
     - name: Push helm-releases repo
