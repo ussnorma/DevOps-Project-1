@@ -22,8 +22,9 @@ jobs:
           cat /etc/hosts
           echo $APPHOST
           curl -s -w %{http_code} http://$APPHOST > curl.txt
-          cat curl.txt
-          echo "curltest=$(cat curl.txt)" >> $env:GITHUB_OUTPUT
+          TEMP=$(cat curl.txt) 
+          echo $TEMP
+          echo curltest=$TEMP >> $GITHUB_OUTPUT
           chmod +x ./curl-check.sh
           ./curl-check.sh
           cat check.txt
@@ -34,7 +35,7 @@ jobs:
         path: ./check.txt
 
     - name: SLack Notification creating helm chart.
-      if: steps.test-2.outputs.curltest == '200'
+      if: steps.test-2.outputs.curltest == 200
       uses: rtCamp/action-slack-notify@v2
       env:
         SLACK_CHANNEL: devops-project
@@ -45,7 +46,7 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
     - name: Set output
-      if: steps.test-2.outputs.curl-test == 200
+      if: steps.test-2.outputs.curltest == 200
       id: set
       run: |
           echo "::set-output name=curl_test::200"
@@ -81,6 +82,7 @@ jobs:
           cd ./wordpress
           helm dependency build
           cd ..
+          
     - name: Test helm lint
       id: test-3
       run: |
@@ -108,6 +110,7 @@ jobs:
     - name: Create helm chart for main app
       run: |
         sed 's/^\(  hostname: \).*$/\1wordpress-main.k8s-9.sa/' ./wordpress/values.yaml > ./wordpress/values.yaml
+        cat ./wordpress/values.yaml | grep "hostname:"
         helm package wordpress > temp.txt
         HVER=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
         git clone https://github.com/ussnorma/helm.git
