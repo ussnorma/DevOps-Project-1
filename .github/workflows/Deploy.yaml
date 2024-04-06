@@ -145,7 +145,7 @@ jobs:
     - name: Clean Pre-Production workspace and create main app
       run: |
           git clone https://github.com/ussnorma/argocd.git
-          rm -rf ./argocd/apps/wordpress-pre*
+          rm -rf ./argocd/apps/wordpress-app-pre.yaml
           kubectl delete ns pre-prod
           WVER=$(shyaml get-value version < ./wordpress/Chart.yaml)
           sed 's/^\(    targetRevision: \).*$/\1'"$WVER"'/' wordpress-app.yaml | sed 's/^\(  name: \).*$/\1wordpress-main/' > wordpress-app-main.yaml
