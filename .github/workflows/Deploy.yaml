@@ -110,7 +110,7 @@ jobs:
     - name: Create helm chart for main app
       run: |
         sed 's/^\(  hostname: \).*$/\1wordpress-main.k8s-9.sa/' ./wordpress/values.yaml > ./wordpress/values.yaml
-        cat ./wordpress/values.yaml | grep "hostname:"
+        cat ./wordpress/values.yaml | grep hostname
         helm package wordpress > temp.txt
         HVER=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
         git clone https://github.com/ussnorma/helm.git
