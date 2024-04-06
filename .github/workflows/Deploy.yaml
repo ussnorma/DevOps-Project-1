@@ -34,7 +34,7 @@ jobs:
         path: ./check.txt
 
     - name: SLack Notification creating helm chart.
-      if: steps.test-2.outputs.curl-test == 200
+      if: steps.test-2.outputs.curltest == '200'
       uses: rtCamp/action-slack-notify@v2
       env:
         SLACK_CHANNEL: devops-project
