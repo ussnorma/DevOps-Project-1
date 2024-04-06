@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wordpress
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-deployed.slack: devops-project
+spec:
+  destination:
+    namespace: pre-prod
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: wordpress
+    repoURL: https://ussnorma.github.io/helm/
+    targetRevision: 20.1.2
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+    - CreateNamespace=true

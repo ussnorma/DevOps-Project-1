@@ -1,0 +1,127 @@
+name: Pre-Deploy
+on:
+  push:
+    branches: [pre-production]
+  pull_request:
+    branches: [pre-production]
+jobs:
+  build:
+    name: build
+    runs-on: local-node1
+
+    steps:
+
+    - name: SLack Notification about starting.
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_CHANNEL: devops-project
+        SLACK_ICON: https://github.com/rtCamp.png?size=48
+        SLACK_COLOR: 'green'
+        SLACK_USERNAME: rtCamp
+        SLACK_TITLE: "Starting Deploy"
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+    - name: Checkout repo.
+      uses: actions/checkout@v4
+      with:
+        ref: 'pre-production'
+
+    - name: Install requirements and helm dependency
+      run: |
+          chmod +x ./pre-deploy.sh
+          ./pre-deploy.sh
+          cd ./wordpress
+          helm dependency build
+          cd ..
+
+    - name: Test helm lint.
+      id: test-1
+      run: |
+          helm lint wordpress
+          echo "helm-lint=$(echo $?)" >> $env:GITHUB_OUTPUT
+          helm lint wordpress > helm-lint-output.log
+
+    - name: Upload report helm lint.
+      if: steps.test-1.outputs.helm-lint != 0
+      uses: actions/upload-artifact@v2
+      with:
+        path: ./helm-lint-output.log
+
+    - name: SLack Notification about helm lint failure.
+      if: steps.test-1.outputs.helm-lint != 0
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_CHANNEL: devops-project
+        SLACK_ICON: https://github.com/rtCamp.png?size=48
+        SLACK_COLOR: 'red'
+        SLACK_USERNAME: rtCamp
+        SLACK_TITLE: "Helm lint failure. Check output log file : helm-lint-output.log"
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+    - name: Create helm chart for app.
+      if: steps.test-1.outputs.helm-lint == 0
+      run: |
+        helm package wordpress > temp.txt
+        HVER=$(cat temp.txt | rev | cut -d'/' -f1 | rev)
+        git clone https://github.com/ussnorma/helm.git
+        cp ./$HVER ./helm/
+        helm repo index --url "https://ussnorma.github.io/helm/" ./helm/
+
+    - name: Push helm-releases repo
+      uses: cpina/github-action-push-to-another-repository@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.GH_TOKEN }}
+      with:
+        source-directory: ./helm/
+        destination-github-username: ${{ secrets.GH_USER }}
+        destination-repository-name: helm
+        user-email: ${{ secrets.GH_EMAIL }}
+        target-branch: "main"
+
+    - name: Sleep for 55 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '55s'
+
+    - name: SLack Notification creating helm chart.
+      if: steps.test-1.outputs.helm-lint == 0
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_CHANNEL: devops-project
+        SLACK_ICON: https://github.com/rtCamp.png?size=48
+        SLACK_COLOR: 'green'
+        SLACK_USERNAME: rtCamp
+        SLACK_TITLE: "Helm chart was created!"
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+    - name: Create PVC for wordpress
+      run: |
+          kubectl apply -f wordpress-pvc-ns.yaml
+
+    - name: Create application for argocd
+      run: |
+          WVER=$(shyaml get-value version < ./wordpress/Chart.yaml)
+          git clone https://github.com/ussnorma/argocd.git
+          sed 's/^\(    targetRevision: \).*$/\1'"$WVER"'/' wordpress-app.yaml | sed 's/^\(  name: \).*$/\1wordpress-pre/'> wordpress-app-pre.yaml
+          cp ./wordpress-app-pre.yaml ./argocd/apps/
+
+    - name: Push helm-releases repo.
+      uses: cpina/github-action-push-to-another-repository@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.GH_TOKEN }}
+      with:
+        source-directory: ./argocd/
+        destination-github-username: ${{ secrets.GH_USER }}
+        destination-repository-name: argocd
+        user-email: ${{ secrets.GH_EMAIL }}
+        target-branch: "main"
+  
+    - name: SLack Notification creating helm chart.
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_CHANNEL: devops-project
+        SLACK_ICON: https://github.com/rtCamp.png?size=48
+        SLACK_COLOR: 'green'
+        SLACK_USERNAME: rtCamp
+        SLACK_TITLE: "App was created. Waiting for ArgoCD Sync!"
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
