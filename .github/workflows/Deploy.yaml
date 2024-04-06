@@ -22,8 +22,8 @@ jobs:
           cat /etc/hosts
           echo $APPHOST
           curl -s -w %{http_code} http://$APPHOST > curl.txt
-          cat curl.txt
-          echo "curltest=$(cat curl.txt)" >> $env:GITHUB_OUTPUT
+          TEMP=$(cat curl.txt) 
+          echo "curltest=$TEMP" >> $env:GITHUB_OUTPUT
           chmod +x ./curl-check.sh
           ./curl-check.sh
           cat check.txt
