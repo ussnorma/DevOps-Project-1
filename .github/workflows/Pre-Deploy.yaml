@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     name: build
-    runs-on: local-node1
+    runs-on: node-1.1
 
     steps:
 

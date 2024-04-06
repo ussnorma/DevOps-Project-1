@@ -7,7 +7,7 @@ on:
 jobs:
   tests:
     name: tests
-    runs-on: local-node1
+    runs-on: node-1.1
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
 
   build:
     name: build
-    runs-on: local-node1
+    runs-on: node-1.1
     needs: 
       - tests
     if: needs.tests.outputs.curl_test == '200'
