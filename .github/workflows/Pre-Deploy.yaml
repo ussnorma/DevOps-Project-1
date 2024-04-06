@@ -25,10 +25,12 @@ jobs:
     - name: Install requirements and helm dependency
       run: |
           ls -la .
+          ls -la ./wordpress
           mv ./wordpress/values.yaml ./wordpress/values-temp.yaml
           sed 's/^\(  hostname: \).*$/\1wordpress-pre.k8s-9.sa/' ./wordpress/values-temp.yaml > ./wordpress/values.yaml
           cat ./wordpress/values.yaml | grep hostname
           rm -rf ./wordpress/values-temp.yaml
+          ls -la ./wordpress
           chmod +x ./pre-deploy.sh
           ./pre-deploy.sh
           cd ./wordpress
