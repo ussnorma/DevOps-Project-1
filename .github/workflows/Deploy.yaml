@@ -22,9 +22,11 @@ jobs:
           cat /etc/hosts
           echo $APPHOST
           curl -s -w %{http_code} http://$APPHOST > curl.txt
-          echo "curl-test=$(cat curl.txt)" >> $env:GITHUB_OUTPUT
+          cat curl.txt
+          echo "curltest=$(cat curl.txt)" >> $env:GITHUB_OUTPUT
           chmod +x ./curl-check.sh
           ./curl-check.sh
+          cat check.txt
 
     - name: Upload report helm lint.
       uses: actions/upload-artifact@v2
