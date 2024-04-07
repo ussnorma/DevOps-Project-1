@@ -6,23 +6,24 @@ jobs:
   build:
     name: build
     runs-on: node-1.1
-
     steps:
 
-    - name: SLack Notification about starting.
+    - name: SLack Notification - Starting Pre-Deploy
       uses: rtCamp/action-slack-notify@v2
       env:
         SLACK_CHANNEL: devops-project
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: 'green'
         SLACK_USERNAME: rtCamp
-        SLACK_TITLE: "Starting Deploy"
+        SLACK_TITLE: "PRE_DEPLOY: Starting Deplloy"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
-    - name: Checkout repo.
-      uses: actions/checkout@v3
+    - name: Checkout repository (pre-production)
+      uses: actions/checkout@v4
+      with:
+        ref: 'pre-production'
 
-    - name: Install requirements and helm dependency
+    - name: Change ingress.hostname install req and helm dependency
       run: |
           mv ./wordpress/values.yaml ./wordpress/values-temp.yaml
           sed 's/^\(  hostname: \).*$/\1wordpress-pre.k8s-9.sa/' ./wordpress/values-temp.yaml > ./wordpress/values.yaml
@@ -34,20 +35,20 @@ jobs:
           helm dependency build
           cd ..
 
-    - name: Test helm lint.
+    - name: Testing helm (helm lint)
       id: test-1
       run: |
           helm lint wordpress
           echo "helm-lint=$(echo $?)" >> $env:GITHUB_OUTPUT
           helm lint wordpress > helm-lint-output.log
 
-    - name: Upload report helm lint.
+    - name: Upload report helm lint (failure)
       if: steps.test-1.outputs.helm-lint != 0
       uses: actions/upload-artifact@v2
       with:
         path: ./helm-lint-output.log
 
-    - name: SLack Notification about helm lint failure.
+    - name: SLack Notification about helm lint failure
       if: steps.test-1.outputs.helm-lint != 0
       uses: rtCamp/action-slack-notify@v2
       env:
@@ -55,10 +56,10 @@ jobs:
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: 'red'
         SLACK_USERNAME: rtCamp
-        SLACK_TITLE: "Helm lint failure. Check output log file : helm-lint-output.log"
+        SLACK_TITLE: "PRE_DEPLOY: Helm lint failure. Check output log file (helm-lint-output.log)"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
-    - name: Create helm chart for app.
+    - name: Create helm chart for application and helm repo
       if: steps.test-1.outputs.helm-lint == 0
       run: |
         helm package wordpress > temp.txt
@@ -67,7 +68,7 @@ jobs:
         cp ./$HVER helm/
         helm repo index --url "https://ussnorma.github.io/helm/" ./helm/
 
-    - name: Push helm-releases repo
+    - name: Push helm package into repo
       uses: cpina/github-action-push-to-another-repository@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.GH_TOKEN }}
@@ -78,12 +79,12 @@ jobs:
         user-email: ${{ secrets.GH_EMAIL }}
         target-branch: "main"
 
-    - name: Sleep for 55 seconds
+    - name: Sleep for 30 seconds (Waiting for action gh-pages)
       uses: jakejarvis/wait-action@master
       with:
-        time: '55s'
+        time: '30s'
 
-    - name: SLack Notification creating helm chart.
+    - name: SLack Notification creating helm repo
       if: steps.test-1.outputs.helm-lint == 0
       uses: rtCamp/action-slack-notify@v2
       env:
@@ -91,12 +92,12 @@ jobs:
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: 'green'
         SLACK_USERNAME: rtCamp
-        SLACK_TITLE: "Helm chart was created!"
+        SLACK_TITLE: "PRE_DEPLOY: Helm chart with repo were created!"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
-    - name: Create PVC for wordpress
+    - name: Create PVC and ns for wordpress-pre
       run: |
-          kubectl apply -f wordpress-pvc-ns.yaml
+          kubectl apply -f wordpress-pvc-ns-pre.yaml
 
     - name: Create application for argocd
       run: |
@@ -105,7 +106,7 @@ jobs:
           sed 's/^\(    targetRevision: \).*$/\1'"$WVER"'/' wordpress-app.yaml | sed 's/^\(  name: \).*$/\1wordpress-pre/'> wordpress-app-pre.yaml
           cp ./wordpress-app-pre.yaml ./argocd/apps/
 
-    - name: Push helm-releases repo.
+    - name: Push argocd repo
       uses: cpina/github-action-push-to-another-repository@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.GH_TOKEN }}
@@ -116,12 +117,12 @@ jobs:
         user-email: ${{ secrets.GH_EMAIL }}
         target-branch: "main"
   
-    - name: SLack Notification creating helm chart.
+    - name: SLack Notification about ending PRE_DEPLOY
       uses: rtCamp/action-slack-notify@v2
       env:
         SLACK_CHANNEL: devops-project
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: 'green'
         SLACK_USERNAME: rtCamp
-        SLACK_TITLE: "App was created. Waiting for ArgoCD Sync!"
+        SLACK_TITLE: "PRE_DEPLOY: END - App was created. Waiting for ArgoCD Sync!"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
