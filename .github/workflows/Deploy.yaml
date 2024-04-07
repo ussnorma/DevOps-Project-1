@@ -7,7 +7,8 @@ jobs:
     name: tests
     runs-on: node-1.2
     steps:
-    - name: Checkout repo
+
+    - name: Checkout repository (production)
       uses: actions/checkout@v4
       with:
         ref: 'production'
@@ -16,23 +17,21 @@ jobs:
       id: test-2
       run: |
           APPHOST=$(shyaml get-value spec.source.helm.parameters.0.value < wordpress-app.yaml)
+          cp /etc/hosts /etc/hosts.backup
           echo "178.124.206.53 $APPHOST" >> /etc/hosts
-          cat /etc/hosts
-          echo $APPHOST
           curl -s -w %{http_code} http://$APPHOST > curl.txt
           TEMP=$(cat curl.txt) 
-          echo $TEMP
           echo curltest=$TEMP >> $GITHUB_OUTPUT
           chmod +x ./curl-check.sh
           ./curl-check.sh
-          cat check.txt
+          rm -rf /etc/hosts && mv /etc/hosts.backup /etc/hosts
 
-    - name: Upload report helm lint.
+    - name: Upload report curl test
       uses: actions/upload-artifact@v2
       with:
         path: ./check.txt
 
-    - name: SLack Notification creating helm chart.
+    - name: SLack Notification curl test
       if: steps.test-2.outputs.curltest == 200
       uses: rtCamp/action-slack-notify@v2
       env:
@@ -58,12 +57,13 @@ jobs:
       - tests
     if: needs.tests.outputs.curl_test == '200'
     steps:
-    - name: Checkout repo.
+
+    - name: Checkout repository (production)
       uses: actions/checkout@v4
       with:
         ref: 'production'
 
-    - name: SLack Notification about starting.
+    - name: SLack Notification about starting MAIN DEPLOY
       uses: rtCamp/action-slack-notify@v2
       env:
         SLACK_CHANNEL: devops-project
@@ -94,7 +94,7 @@ jobs:
       with:
         path: ./helm-lint-output.log
 
-    - name: SLack Notification about helm lint failure.
+    - name: SLack Notification about helm lint failure
       if: steps.test-3.outputs.helm-lint != 0
       uses: rtCamp/action-slack-notify@v2
       env:
@@ -116,7 +116,7 @@ jobs:
         cp ./$HVERM ./helm/
         helm repo index --url "https://ussnorma.github.io/helm/" ./helm/
     
-    - name: Push helm-releases repo
+    - name: Push helm repo
       uses: cpina/github-action-push-to-another-repository@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.GH_TOKEN }}
@@ -127,12 +127,12 @@ jobs:
         user-email: ${{ secrets.GH_EMAIL }}
         target-branch: "main"
 
-    - name: Sleep for 55 seconds
+    - name: Sleep for 30 seconds (Waiting for action gh-pages)
       uses: jakejarvis/wait-action@master
       with:
-        time: '55s'
+        time: '30s'
 
-    - name: SLack Notification creating helm chart.
+    - name: SLack Notification creating helm repo
       if: steps.test-3.outputs.helm-lint == 0
       uses: rtCamp/action-slack-notify@v2
       env:
@@ -140,10 +140,10 @@ jobs:
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: 'green'
         SLACK_USERNAME: rtCamp
-        SLACK_TITLE: "MAIN DEPLOY: Helm chart was created!"
+        SLACK_TITLE: "MAIN DEPLOY: Helm chart and repo were created!"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
-    - name: Create PVC for wordpress
+    - name: Create PVC and ns for wordpress-main
       run: |
           kubectl apply -f wordpress-pvc-ns-main.yaml
 
@@ -156,7 +156,7 @@ jobs:
           sed 's/^\(    targetRevision: \).*$/\1'"$WVER"'/' wordpress-app.yaml | sed 's/^\(  name: \).*$/\1wordpress-main/' | sed 's/^\(    namespace: \).*$/\1prod/' | sed 's/^\(        value: \).*$/\1wordpress-main.k8s-9.sa/' > wordpress-app-main.yaml
           cp ./wordpress-app-main.yaml ./argocd/apps/
 
-    - name: Push helm-releases repo.
+    - name: Push hargocd repo
       uses: cpina/github-action-push-to-another-repository@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.GH_TOKEN }}
@@ -167,12 +167,12 @@ jobs:
         user-email: ${{ secrets.GH_EMAIL }}
         target-branch: "main"
   
-    - name: SLack Notification creating helm chart.
+    - name: SLack Notification about ending MAIN DEPLOY
       uses: rtCamp/action-slack-notify@v2
       env:
         SLACK_CHANNEL: devops-project
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: 'green'
         SLACK_USERNAME: rtCamp
-        SLACK_TITLE: "App was created. Waiting for ArgoCD Sync!"
+        SLACK_TITLE: "MAIN DEPLOY: App was created. Waiting for ArgoCD Sync!"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
