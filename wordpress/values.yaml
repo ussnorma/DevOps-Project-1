@@ -107,7 +107,7 @@ image:
 
 ## @param wordpressUsername WordPress username
 ##
-wordpressUsername: kononkov
+wordpressUsername: test
 ## @param wordpressPassword WordPress user password
 ## Defaults to a random 10-character alphanumeric string if not set
 ##
@@ -122,13 +122,13 @@ existingSecret: ""
 wordpressEmail: user@example.com
 ## @param wordpressFirstName WordPress user first name
 ##
-wordpressFirstName: dmitry
+wordpressFirstName: test
 ## @param wordpressLastName WordPress user last name
 ##
-wordpressLastName: kononkov
+wordpressLastName: test
 ## @param wordpressBlogName Blog name
 ##
-wordpressBlogName: kononkov
+wordpressBlogName: test
 ## @param wordpressTablePrefix Prefix to use for WordPress database tables
 ##
 wordpressTablePrefix: wp_
